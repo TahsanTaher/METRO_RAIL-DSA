@@ -1,0 +1,1011 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0e1a;--surface:#111827;--surface2:#1a2236;--surface3:#222d45;
+  --accent:#00d4ff;--accent2:#7c3aed;--green:#10b981;--orange:#f59e0b;--red:#ef4444;--pink:#ec4899;
+  --text:#e2e8f0;--muted:#64748b;--border:#1e2d4a;
+  --line-red:#ef4444;--line-blue:#3b82f6;--line-green:#10b981;--line-yellow:#f59e0b;--line-purple:#8b5cf6;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+h1,h2,h3,.mono{font-family:'Space Mono',monospace}
+
+/* Layout */
+.app{display:grid;grid-template-rows:auto 1fr;min-height:100vh}
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:100}
+.logo{font-family:'Space Mono',monospace;font-size:18px;color:var(--accent);letter-spacing:-1px;display:flex;align-items:center;gap:8px}
+.logo-dot{width:8px;height:8px;background:var(--accent);border-radius:50%;box-shadow:0 0 8px var(--accent)}
+.tabs{display:flex;gap:4px;margin-left:auto}
+.tab{padding:6px 14px;border-radius:6px;border:1px solid transparent;background:none;color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;transition:all .2s}
+.tab.active{background:var(--accent2);color:#fff;border-color:var(--accent2)}
+.tab:hover:not(.active){background:var(--surface2);color:var(--text);border-color:var(--border)}
+
+/* Main sections */
+.content{padding:20px;max-width:900px;margin:0 auto;width:100%}
+.section{display:none}.section.active{display:block}
+
+/* Cards */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px}
+.card-sm{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px}
+
+/* Search */
+.search-row{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;margin-bottom:16px;align-items:end}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-family:'Space Mono',monospace}
+.input{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;width:100%;transition:border .2s}
+.input:focus{border-color:var(--accent)}
+.input::placeholder{color:var(--muted)}
+select.input{cursor:pointer}
+.btn{padding:10px 20px;border-radius:8px;border:none;cursor:pointer;font-family:'Space Mono',monospace;font-size:13px;font-weight:700;transition:all .2s;display:flex;align-items:center;gap:8px;white-space:nowrap}
+.btn-primary{background:var(--accent2);color:#fff}
+.btn-primary:hover{background:#6d28d9;transform:translateY(-1px)}
+.btn-sm{padding:6px 12px;font-size:11px;border-radius:6px}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--muted)}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+
+/* Autocomplete */
+.autocomplete-wrap{position:relative}
+.suggestions{position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:8px;z-index:200;max-height:180px;overflow-y:auto;margin-top:4px}
+.suggestion{padding:10px 14px;cursor:pointer;font-size:14px;display:flex;align-items:center;gap:8px;transition:background .15s}
+.suggestion:hover,.suggestion.sel{background:var(--surface2)}
+.suggestion .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+/* Route result */
+.result-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;flex-wrap:wrap;gap:8px}
+.algo-badge{display:flex;gap:6px;flex-wrap:wrap}
+.badge{padding:3px 10px;border-radius:20px;font-family:'Space Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.04em}
+.badge-blue{background:#1e3a5f;color:#60a5fa}
+.badge-purple{background:#2d1b69;color:#a78bfa}
+.badge-green{background:#064e3b;color:#34d399}
+.badge-orange{background:#451a03;color:#fb923c}
+
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.stat{background:var(--surface2);border-radius:8px;padding:12px;text-align:center}
+.stat-val{font-family:'Space Mono',monospace;font-size:20px;font-weight:700;color:var(--accent)}
+.stat-lbl{font-size:11px;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:.06em}
+
+/* Route path */
+.route-path{position:relative;padding-left:28px}
+.route-stop{display:flex;align-items:flex-start;gap:12px;margin-bottom:0;position:relative}
+.stop-line{position:absolute;left:-20px;top:0;bottom:0;width:3px;background:var(--border)}
+.stop-line.colored{background:var(--line-color, var(--accent))}
+.stop-dot{width:14px;height:14px;border-radius:50%;border:3px solid var(--line-color,var(--accent));background:var(--surface);position:absolute;left:-27px;top:3px;flex-shrink:0;z-index:1}
+.stop-dot.transfer{background:var(--accent);border-color:#fff;box-shadow:0 0 0 3px var(--accent)}
+.stop-dot.terminal{width:16px;height:16px;left:-28px;background:var(--line-color,var(--accent));border-color:#fff}
+.stop-info{padding-bottom:20px;flex:1}
+.stop-name{font-size:14px;font-weight:600;color:var(--text)}
+.stop-meta{font-size:12px;color:var(--muted);margin-top:2px}
+.transfer-tag{display:inline-flex;align-items:center;gap:4px;background:var(--surface3);padding:2px 8px;border-radius:4px;font-size:11px;color:var(--accent);margin-top:4px;font-weight:600}
+
+/* Autocomplete dropdown hide when empty */
+.suggestions:empty{display:none}
+
+/* Map canvas */
+#mapCanvas{width:100%;height:380px;border-radius:10px;border:1px solid var(--border)}
+
+/* Timetable */
+.timetable-header{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.time-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)}
+.time-row:last-child{border-bottom:none}
+.time-badge{font-family:'Space Mono',monospace;font-size:13px;font-weight:700;color:var(--accent);background:var(--surface2);padding:4px 10px;border-radius:6px}
+
+/* DSA Visualizer */
+.dsa-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.dsa-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px}
+.dsa-title{font-family:'Space Mono',monospace;font-size:11px;color:var(--accent2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em}
+.dsa-content{font-family:'Space Mono',monospace;font-size:11px;color:var(--green);line-height:1.7;white-space:pre-wrap;max-height:100px;overflow-y:auto}
+.log-entry{padding:4px 0;border-bottom:1px solid var(--border);font-family:'Space Mono',monospace;font-size:10px;color:var(--muted)}
+.log-entry.info{color:var(--accent)}
+.log-entry.found{color:var(--green)}
+.log-entry.warn{color:var(--orange)}
+
+/* Fare */
+.fare-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.fare-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center}
+.fare-amount{font-family:'Space Mono',monospace;font-size:28px;font-weight:700;color:var(--green)}
+.fare-type{font-size:12px;color:var(--muted);margin-top:4px}
+
+/* Status bar */
+.status-bar{display:flex;gap:8px;padding:10px 20px;background:var(--surface);border-top:1px solid var(--border);font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);overflow-x:auto}
+.status-item{display:flex;align-items:center;gap:5px;white-space:nowrap}
+.status-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* Network map */
+.legend{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+.legend-dot{width:10px;height:10px;border-radius:50%}
+
+/* Alert banner */
+.alert{background:#1c0a0a;border:1px solid #7f1d1d;border-radius:8px;padding:10px 14px;font-size:13px;color:#fca5a5;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.alert-success{background:#022c22;border-color:#065f46;color:#6ee7b7}
+
+/* Algo selector */
+.algo-row{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.algo-btn{padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-size:12px;font-family:'Space Mono',monospace;transition:all .2s}
+.algo-btn.active{background:var(--accent2);color:#fff;border-color:var(--accent2)}
+
+/* Line colors mapping */
+.line-Red{--line-color:var(--line-red)}
+.line-Blue{--line-color:var(--line-blue)}
+.line-Green{--line-color:var(--line-green)}
+.line-Yellow{--line-color:var(--line-yellow)}
+.line-Purple{--line-color:var(--line-purple)}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--surface)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+
+.empty-state{text-align:center;padding:40px 20px;color:var(--muted)}
+.empty-icon{font-size:40px;margin-bottom:12px}
+.empty-text{font-size:14px}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tag{padding:2px 8px;border-radius:4px;font-size:10px;font-family:'Space Mono',monospace;font-weight:700;text-transform:uppercase}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="header">
+  <div class="logo"><span class="logo-dot"></span>METRO<span style="color:var(--muted)">DSA</span></div>
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('route')">Route</button>
+    <button class="tab" onclick="showTab('map')">Network Map</button>
+    <button class="tab" onclick="showTab('fare')">Fares</button>
+    <button class="tab" onclick="showTab('dsa')">DSA Engine</button>
+    <button class="tab" onclick="showTab('time')">Timetable</button>
+  </div>
+</div>
+
+<div style="flex:1;overflow-y:auto">
+<div class="content">
+
+<!-- ===== ROUTE TAB ===== -->
+<div id="tab-route" class="section active">
+  <div class="card">
+    <div style="margin-bottom:14px;display:flex;align-items:center;justify-content:space-between">
+      <div style="font-size:13px;color:var(--muted)">Find the best route between any two stations</div>
+      <div class="algo-row" style="margin:0">
+        <button class="algo-btn active" onclick="setAlgo('dijkstra',this)">Dijkstra</button>
+        <button class="algo-btn" onclick="setAlgo('bfs',this)">BFS</button>
+        <button class="algo-btn" onclick="setAlgo('astar',this)">A*</button>
+      </div>
+    </div>
+    <div class="search-row">
+      <div class="field autocomplete-wrap">
+        <label>From Station</label>
+        <input class="input" id="inp-from" placeholder="e.g. Airport" autocomplete="off" oninput="handleAC(this,'from')" onkeydown="handleKey(event,'from')"/>
+        <div class="suggestions" id="sug-from"></div>
+      </div>
+      <div class="field autocomplete-wrap">
+        <label>To Station</label>
+        <input class="input" id="inp-to" placeholder="e.g. City Centre" autocomplete="off" oninput="handleAC(this,'to')" onkeydown="handleKey(event,'to')"/>
+        <div class="suggestions" id="sug-to"></div>
+      </div>
+      <button class="btn btn-primary" onclick="findRoute()">⟶ Find</button>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <span style="font-size:12px;color:var(--muted)">Preferences:</span>
+      <button class="btn btn-outline btn-sm" onclick="setPref('fastest',this)">⚡ Fastest</button>
+      <button class="btn btn-outline btn-sm" onclick="setPref('fewest',this)">🔢 Fewest Stops</button>
+      <button class="btn btn-outline btn-sm" onclick="setPref('cheapest',this)">💰 Cheapest</button>
+      <button class="btn btn-outline btn-sm" onclick="swap()">⇄ Swap</button>
+    </div>
+  </div>
+
+  <div id="route-result"></div>
+</div>
+
+<!-- ===== MAP TAB ===== -->
+<div id="tab-map" class="section">
+  <div class="card">
+    <div class="legend" id="map-legend"></div>
+    <canvas id="mapCanvas"></canvas>
+    <div style="margin-top:10px;font-size:12px;color:var(--muted)">
+      <span style="color:var(--accent)">○</span> Interchange station &nbsp;
+      <span style="color:var(--text)">●</span> Regular station &nbsp;
+      Numbers = zone
+    </div>
+  </div>
+  <div class="card">
+    <div style="font-family:'Space Mono',monospace;font-size:12px;color:var(--muted);margin-bottom:10px">STATION INFO</div>
+    <div id="station-info-grid" class="grid2"></div>
+  </div>
+</div>
+
+<!-- ===== FARE TAB ===== -->
+<div id="tab-fare" class="section">
+  <div class="card">
+    <div class="search-row">
+      <div class="field autocomplete-wrap">
+        <label>From</label>
+        <input class="input" id="fare-from" placeholder="Station..." autocomplete="off" oninput="handleAC(this,'fare-from')" onkeydown="handleKey(event,'fare-from')"/>
+        <div class="suggestions" id="sug-fare-from"></div>
+      </div>
+      <div class="field autocomplete-wrap">
+        <label>To</label>
+        <input class="input" id="fare-to" placeholder="Station..." autocomplete="off" oninput="handleAC(this,'fare-to')" onkeydown="handleKey(event,'fare-to')"/>
+        <div class="suggestions" id="sug-fare-to"></div>
+      </div>
+      <button class="btn btn-primary" onclick="calcFare()">Calculate</button>
+    </div>
+    <div style="margin-bottom:10px;display:flex;gap:8px;align-items:center">
+      <label style="font-size:12px;color:var(--muted)">Time:</label>
+      <button class="algo-btn active" onclick="setTime('off',this)">Off-Peak</button>
+      <button class="algo-btn" onclick="setTime('peak',this)">Peak Hour</button>
+    </div>
+  </div>
+  <div id="fare-result"></div>
+  <div class="card">
+    <div style="font-family:'Space Mono',monospace;font-size:12px;color:var(--muted);margin-bottom:12px">ZONE FARE MATRIX (BDT) — Segment Tree Powered</div>
+    <div id="zone-matrix"></div>
+  </div>
+</div>
+
+<!-- ===== DSA ENGINE TAB ===== -->
+<div id="tab-dsa" class="section">
+  <div class="card">
+    <div style="font-family:'Space Mono',monospace;font-size:13px;color:var(--accent);margin-bottom:6px">DSA Engine Inspector</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:14px">Run a route and watch the algorithms work in real-time</div>
+    <div class="dsa-grid">
+      <div class="dsa-card">
+        <div class="dsa-title">Graph (Adjacency List)</div>
+        <div class="dsa-content" id="dsa-graph">Run a search to populate...</div>
+      </div>
+      <div class="dsa-card">
+        <div class="dsa-title">Min-Heap Priority Queue</div>
+        <div class="dsa-content" id="dsa-heap">Awaiting Dijkstra run...</div>
+      </div>
+      <div class="dsa-card">
+        <div class="dsa-title">Trie (Autocomplete)</div>
+        <div class="dsa-content" id="dsa-trie">Type in search box to see Trie traversal...</div>
+      </div>
+      <div class="dsa-card">
+        <div class="dsa-title">Segment Tree (Fare)</div>
+        <div class="dsa-content" id="dsa-segtree">Run fare query to populate...</div>
+      </div>
+    </div>
+    <div class="dsa-card" style="margin-bottom:10px">
+      <div class="dsa-title">Algorithm Execution Log</div>
+      <div id="algo-log" style="max-height:200px;overflow-y:auto"></div>
+    </div>
+    <div class="dsa-grid">
+      <div class="dsa-card">
+        <div class="dsa-title">Floyd-Warshall Cache (Offline)</div>
+        <div class="dsa-content" id="dsa-floyd">Loading all-pairs matrix...</div>
+      </div>
+      <div class="dsa-card">
+        <div class="dsa-title">BFS Queue State</div>
+        <div class="dsa-content" id="dsa-bfs">BFS not yet run...</div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div style="font-family:'Space Mono',monospace;font-size:12px;color:var(--muted);margin-bottom:10px">COMPLEXITY REFERENCE</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px" id="complexity-ref"></div>
+  </div>
+</div>
+
+<!-- ===== TIMETABLE TAB ===== -->
+<div id="tab-time" class="section">
+  <div class="card">
+    <div class="timetable-header">
+      <div class="field autocomplete-wrap" style="flex:1">
+        <label>Station</label>
+        <input class="input" id="time-station" placeholder="Station name..." autocomplete="off" oninput="handleAC(this,'time-station')" onkeydown="handleKey(event,'time-station')"/>
+        <div class="suggestions" id="sug-time-station"></div>
+      </div>
+      <div class="field">
+        <label>Direction</label>
+        <select class="input" id="time-dir"><option>Both</option><option>Northbound</option><option>Southbound</option></select>
+      </div>
+      <button class="btn btn-primary" onclick="showTimetable()">View</button>
+    </div>
+    <div id="timetable-result"></div>
+  </div>
+</div>
+
+</div><!-- content -->
+</div><!-- scroll -->
+
+<div class="status-bar">
+  <div class="status-item"><span class="status-dot"></span>System Online</div>
+  <div class="status-item">|</div>
+  <div class="status-item" id="stat-stations">Loading...</div>
+  <div class="status-item">|</div>
+  <div class="status-item" id="stat-lines">Lines: 5</div>
+  <div class="status-item">|</div>
+  <div class="status-item" id="stat-algo">Algo: Dijkstra</div>
+  <div class="status-item">|</div>
+  <div class="status-item" id="stat-time">--:--</div>
+</div>
+</div>
+
+<script>
+// ==================== DSA DATA STRUCTURES ====================
+
+// 1. GRAPH (Adjacency List)
+class Graph {
+  constructor(){this.nodes=new Map();this.edges=new Map()}
+  addNode(id,data){this.nodes.set(id,data);if(!this.edges.has(id))this.edges.set(id,[])}
+  addEdge(a,b,w,line){
+    this.edges.get(a).push({to:b,weight:w,time:w,line});
+    this.edges.get(b).push({to:a,weight:w,time:w,line});
+  }
+  neighbors(id){return this.edges.get(id)||[]}
+  node(id){return this.nodes.get(id)}
+}
+
+// 2. MIN-HEAP PRIORITY QUEUE
+class MinHeap {
+  constructor(){this.heap=[];this.log=[]}
+  push(item){
+    this.heap.push(item);
+    this._bubbleUp(this.heap.length-1);
+    this.log.push(`PUSH [dist=${item.dist} node=${item.id}]`);
+  }
+  pop(){
+    const top=this.heap[0];
+    const last=this.heap.pop();
+    if(this.heap.length>0){this.heap[0]=last;this._sinkDown(0)}
+    this.log.push(`POP  [dist=${top.dist} node=${top.id}]`);
+    return top;
+  }
+  isEmpty(){return this.heap.length===0}
+  _bubbleUp(i){
+    while(i>0){
+      const p=Math.floor((i-1)/2);
+      if(this.heap[p].dist<=this.heap[i].dist)break;
+      [this.heap[p],this.heap[i]]=[this.heap[i],this.heap[p]];i=p;
+    }
+  }
+  _sinkDown(i){
+    const n=this.heap.length;
+    while(true){
+      let m=i,l=2*i+1,r=2*i+2;
+      if(l<n&&this.heap[l].dist<this.heap[m].dist)m=l;
+      if(r<n&&this.heap[r].dist<this.heap[m].dist)m=r;
+      if(m===i)break;
+      [this.heap[i],this.heap[m]]=[this.heap[m],this.heap[i]];i=m;
+    }
+  }
+}
+
+// 3. TRIE
+class TrieNode{constructor(){this.children={};this.isEnd=false;this.stationId=null}}
+class Trie {
+  constructor(){this.root=new TrieNode();this.traversalLog=[]}
+  insert(word,id){
+    let n=this.root;
+    for(const c of word.toLowerCase()){
+      if(!n.children[c])n.children[c]=new TrieNode();
+      n=n.children[c];
+    }
+    n.isEnd=true;n.stationId=id;
+  }
+  search(prefix){
+    this.traversalLog=[];
+    let n=this.root;
+    for(const c of prefix.toLowerCase()){
+      if(!n.children[c]){this.traversalLog.push(`'${c}' → no match`);return[]}
+      this.traversalLog.push(`'${c}' → found`);
+      n=n.children[c];
+    }
+    const res=[];this._collect(n,prefix,res);return res;
+  }
+  _collect(n,prefix,res){
+    if(n.isEnd)res.push({word:prefix,id:n.stationId});
+    for(const[c,child]of Object.entries(n.children)){this._collect(child,prefix+c,res)}
+  }
+}
+
+// 4. SEGMENT TREE (for fare queries)
+class SegmentTree {
+  constructor(arr){
+    this.n=arr.length;this.tree=new Array(4*this.n).fill(0);
+    this.log=[];this.build(arr,0,0,this.n-1);
+  }
+  build(arr,node,start,end){
+    if(start===end){this.tree[node]=arr[start];return}
+    const mid=Math.floor((start+end)/2);
+    this.build(arr,2*node+1,start,mid);
+    this.build(arr,2*node+2,mid+1,end);
+    this.tree[node]=this.tree[2*node+1]+this.tree[2*node+2];
+  }
+  query(l,r,node=0,start=0,end=this.n-1){
+    if(r<start||end<l)return 0;
+    if(l<=start&&end<=r){this.log.push(`Range [${start},${end}] → ${this.tree[node]}`);return this.tree[node]}
+    const mid=Math.floor((start+end)/2);
+    return this.query(l,r,2*node+1,start,mid)+this.query(l,r,2*node+2,mid+1,end);
+  }
+}
+
+// ==================== METRO NETWORK DATA ====================
+const STATIONS = [
+  {id:'A1',name:'Airport',line:'Red',zone:1,x:80,y:60,transfers:[]},
+  {id:'A2',name:'Airport North',line:'Red',zone:1,x:140,y:80,transfers:[]},
+  {id:'A3',name:'Uttara North',line:'Red',zone:1,x:190,y:110,transfers:['Green']},
+  {id:'A4',name:'Uttara Centre',line:'Red',zone:1,x:210,y:145,transfers:[]},
+  {id:'A5',name:'Uttara South',line:'Red',zone:1,x:220,y:180,transfers:[]},
+  {id:'A6',name:'Pallabi',line:'Red',zone:2,x:225,y:215,transfers:[]},
+  {id:'A7',name:'Mirpur 11',line:'Red',zone:2,x:215,y:248,transfers:[]},
+  {id:'A8',name:'Mirpur 10',line:'Red',zone:2,x:200,y:282,transfers:['Blue']},
+  {id:'A9',name:'Kazipara',line:'Red',zone:2,x:195,y:315,transfers:[]},
+  {id:'A10',name:'Shewrapara',line:'Red',zone:2,x:198,y:348,transfers:[]},
+  {id:'A11',name:'Agargaon',line:'Red',zone:2,x:210,y:282,transfers:[]},
+  {id:'A12',name:'Bijoy Sarani',line:'Red',zone:3,x:225,y:315,transfers:[]},
+  {id:'A13',name:'Farmgate',line:'Red',zone:3,x:235,y:350,transfers:['Purple']},
+  {id:'A14',name:'Kawran Bazar',line:'Red',zone:3,x:252,y:382,transfers:[]},
+  {id:'A15',name:'Shahbag',line:'Red',zone:3,x:268,y:408,transfers:['Yellow']},
+  {id:'A16',name:'Dhaka University',line:'Red',zone:3,x:280,y:435,transfers:[]},
+  {id:'A17',name:'Bangladesh Secretariat',line:'Red',zone:3,x:295,y:458,transfers:[]},
+  {id:'A18',name:'Motijheel',line:'Red',zone:3,x:310,y:480,transfers:['Blue']},
+  {id:'A19',name:'Kamalapur',line:'Red',zone:4,x:330,y:500,transfers:[]},
+
+  // Blue Line
+  {id:'B1',name:'Gabtoli',line:'Blue',zone:1,x:90,y:280,transfers:[]},
+  {id:'B2',name:'Shyamoli',line:'Blue',zone:2,x:120,y:295,transfers:[]},
+  {id:'B3',name:'Adabar',line:'Blue',zone:2,x:145,y:305,transfers:[]},
+  {id:'B4',name:'Mohammadpur',line:'Blue',zone:2,x:165,y:290,transfers:[]},
+  {id:'B5',name:'Mirpur 10 Blue',line:'Blue',zone:2,x:200,y:282,transfers:['Red'],alias:'Mirpur 10'},
+  {id:'B6',name:'Tejgaon',line:'Blue',zone:3,x:260,y:305,transfers:[]},
+  {id:'B7',name:'Nakhalpara',line:'Blue',zone:3,x:290,y:320,transfers:[]},
+  {id:'B8',name:'Banani',line:'Blue',zone:3,x:310,y:305,transfers:[]},
+  {id:'B9',name:'Gulshan 2',line:'Blue',zone:3,x:345,y:295,transfers:['Green']},
+  {id:'B10',name:'Badda',line:'Blue',zone:3,x:380,y:300,transfers:[]},
+  {id:'B11',name:'Rampura',line:'Blue',zone:3,x:410,y:315,transfers:[]},
+  {id:'B12',name:'Motijheel Blue',line:'Blue',zone:3,x:310,y:480,transfers:['Red'],alias:'Motijheel'},
+
+  // Green Line
+  {id:'G1',name:'Uttara North Green',line:'Green',zone:1,x:190,y:110,transfers:['Red'],alias:'Uttara North'},
+  {id:'G2',name:'Turag',line:'Green',zone:1,x:160,y:145,transfers:[]},
+  {id:'G3',name:'Diabari',line:'Green',zone:1,x:135,y:175,transfers:[]},
+  {id:'G4',name:'Kamarpara',line:'Green',zone:2,x:120,y:215,transfers:[]},
+  {id:'G5',name:'Baunia',line:'Green',zone:2,x:130,y:250,transfers:[]},
+  {id:'G6',name:'Trishal',line:'Green',zone:2,x:155,y:278,transfers:[]},
+  {id:'G7',name:'Gulshan 1',line:'Green',zone:3,x:335,y:268,transfers:[]},
+  {id:'G8',name:'Gulshan 2 Green',line:'Green',zone:3,x:345,y:295,transfers:['Blue'],alias:'Gulshan 2'},
+  {id:'G9',name:'Baridhara',line:'Green',zone:3,x:370,y:270,transfers:[]},
+  {id:'G10',name:'Notun Bazar',line:'Green',zone:4,x:400,y:252,transfers:[]},
+
+  // Yellow Line
+  {id:'Y1',name:'Gausia',line:'Yellow',zone:3,x:240,y:395,transfers:[]},
+  {id:'Y2',name:'Shahbag Yellow',line:'Yellow',zone:3,x:268,y:408,transfers:['Red'],alias:'Shahbag'},
+  {id:'Y3',name:'Banglamotor',line:'Yellow',zone:3,x:295,y:388,transfers:[]},
+  {id:'Y4',name:'Karwan Bazar Yl',line:'Yellow',zone:3,x:320,y:365,transfers:[]},
+  {id:'Y5',name:'Hatirjheel',line:'Yellow',zone:3,x:355,y:348,transfers:[]},
+
+  // Purple Line
+  {id:'P1',name:'Gazipur',line:'Purple',zone:1,x:320,y:50,transfers:[]},
+  {id:'P2',name:'Tongi',line:'Purple',zone:1,x:330,y:90,transfers:[]},
+  {id:'P3',name:'Bashundhara',line:'Purple',zone:2,x:370,y:135,transfers:[]},
+  {id:'P4',name:'Baridhara DOHS',line:'Purple',zone:2,x:390,y:175,transfers:[]},
+  {id:'P5',name:'Farmgate Pur',line:'Purple',zone:3,x:235,y:350,transfers:['Red'],alias:'Farmgate'},
+  {id:'P6',name:'Dhanmondi',line:'Purple',zone:3,x:225,y:380,transfers:[]},
+  {id:'P7',name:'Jigatola',line:'Purple',zone:3,x:235,y:410,transfers:[]},
+];
+
+const LINE_COLORS={Red:'#ef4444',Blue:'#3b82f6',Green:'#10b981',Yellow:'#f59e0b',Purple:'#8b5cf6'};
+
+// Build Graph
+const graph=new Graph();
+const trie=new Trie();
+
+// Insert all stations
+STATIONS.forEach(s=>{graph.addNode(s.id,s)});
+STATIONS.forEach(s=>{trie.insert(s.alias||s.name,s.id)});
+
+// Red Line edges (time in mins)
+const redEdges=[['A1','A2',2],['A2','A3',2],['A3','A4',2],['A4','A5',2],['A5','A6',2],['A6','A7',2],['A7','A8',2],['A8','A9',2],['A9','A10',2],['A10','A11',3],['A11','A12',2],['A12','A13',3],['A13','A14',2],['A14','A15',2],['A15','A16',2],['A16','A17',2],['A17','A18',2],['A18','A19',3]];
+redEdges.forEach(([a,b,w])=>graph.addEdge(a,b,w,'Red'));
+
+// Blue Line edges
+const blueEdges=[['B1','B2',3],['B2','B3',2],['B3','B4',2],['B4','B5',3],['B5','B6',4],['B6','B7',2],['B7','B8',2],['B8','B9',3],['B9','B10',2],['B10','B11',3],['B11','B12',8]];
+blueEdges.forEach(([a,b,w])=>graph.addEdge(a,b,w,'Blue'));
+
+// Green Line edges
+const greenEdges=[['G1','G2',3],['G2','G3',2],['G3','G4',3],['G4','G5',2],['G5','G6',3],['G7','G8',2],['G8','G9',2],['G9','G10',3]];
+greenEdges.forEach(([a,b,w])=>graph.addEdge(a,b,w,'Green'));
+
+// Yellow Line edges
+const yellowEdges=[['Y1','Y2',2],['Y2','Y3',2],['Y3','Y4',2],['Y4','Y5',3]];
+yellowEdges.forEach(([a,b,w])=>graph.addEdge(a,b,w,'Yellow'));
+
+// Purple Line edges
+const purpleEdges=[['P1','P2',4],['P2','P3',5],['P3','P4',3],['P5','P6',3],['P6','P7',2]];
+purpleEdges.forEach(([a,b,w])=>graph.addEdge(a,b,w,'Purple'));
+
+// Transfer edges (interchange)
+const transfers=[
+  ['A3','G1',3],['A8','B5',2],['A13','P5',2],['A15','Y2',2],['A18','B12',3],['B9','G8',2]
+];
+transfers.forEach(([a,b,w])=>graph.addEdge(a,b,w,'Transfer'));
+
+// ==================== ALGORITHMS ====================
+
+// Dijkstra
+function dijkstra(src,dst){
+  const dist=new Map(),prev=new Map(),visited=new Set();
+  const heap=new MinHeap();
+  const log=[];
+  graph.nodes.forEach((_,id)=>dist.set(id,Infinity));
+  dist.set(src,0);heap.push({id:src,dist:0});
+  log.push({type:'info',msg:`Start: ${graph.node(src)?.name} → ${graph.node(dst)?.name}`});
+  let iterations=0;
+  while(!heap.isEmpty()){
+    const {id,dist:d}=heap.pop();
+    if(visited.has(id))continue;
+    visited.add(id);iterations++;
+    log.push({type:'info',msg:`Visit [${graph.node(id)?.name}] dist=${d}`});
+    if(id===dst){log.push({type:'found',msg:`Destination found! dist=${d} iters=${iterations}`});break}
+    for(const {to,weight,line} of graph.neighbors(id)){
+      if(visited.has(to))continue;
+      const nd=d+weight;
+      if(nd<dist.get(to)){
+        dist.set(to,nd);prev.set(to,{from:id,line});
+        heap.push({id:to,dist:nd});
+      }
+    }
+  }
+  return {dist,prev,log,heap,iterations};
+}
+
+// BFS
+function bfs(src,dst){
+  const visited=new Set(),prev=new Map();
+  const queue=[src];visited.add(src);
+  const log=[{type:'info',msg:`BFS start: ${graph.node(src)?.name}`}];
+  const queueLog=[[...queue]];
+  while(queue.length){
+    const id=queue.shift();
+    log.push({type:'info',msg:`Dequeue: ${graph.node(id)?.name} | queue size=${queue.length}`});
+    if(id===dst){log.push({type:'found',msg:'Destination reached!'});break}
+    for(const {to,line} of graph.neighbors(id)){
+      if(!visited.has(to)){
+        visited.add(to);prev.set(to,{from:id,line});queue.push(to);
+        queueLog.push([...queue]);
+      }
+    }
+  }
+  return {prev,log,queueLog};
+}
+
+// A*
+function heuristic(a,b){
+  const na=graph.node(a),nb=graph.node(b);
+  if(!na||!nb)return 0;
+  return Math.abs(na.x-nb.x)+Math.abs(na.y-nb.y);
+}
+function astar(src,dst){
+  const g=new Map(),f=new Map(),prev=new Map(),visited=new Set();
+  const heap=new MinHeap();
+  const log=[];
+  graph.nodes.forEach((_,id)=>{g.set(id,Infinity);f.set(id,Infinity)});
+  g.set(src,0);f.set(src,heuristic(src,dst));
+  heap.push({id:src,dist:f.get(src)});
+  log.push({type:'info',msg:`A* from ${graph.node(src)?.name} h=${heuristic(src,dst).toFixed(1)}`});
+  while(!heap.isEmpty()){
+    const {id}=heap.pop();
+    if(visited.has(id))continue;
+    visited.add(id);
+    if(id===dst){log.push({type:'found',msg:`A* found path! g=${g.get(dst)}`});break}
+    for(const {to,weight,line} of graph.neighbors(id)){
+      if(visited.has(to))continue;
+      const ng=g.get(id)+weight;
+      if(ng<g.get(to)){
+        g.set(to,ng);f.set(to,ng+heuristic(to,dst));
+        prev.set(to,{from:id,line});heap.push({id:to,dist:f.get(to)});
+        log.push({type:'info',msg:`Update ${graph.node(to)?.name} g=${ng} h=${heuristic(to,dst).toFixed(1)}`});
+      }
+    }
+  }
+  return {dist:g,prev,log};
+}
+
+// Reconstruct path
+function reconstructPath(prev,src,dst){
+  const path=[];let cur=dst;
+  while(cur&&cur!==src){const p=prev.get(cur);if(!p)return null;path.unshift({id:cur,line:p.line});cur=p.from}
+  if(cur!==src)return null;
+  path.unshift({id:src,line:path[0]?.line||'Red'});
+  return path;
+}
+
+// Floyd-Warshall (all pairs - run once)
+let floydMatrix=null;
+let floydIds=[];
+function buildFloyd(){
+  floydIds=[...graph.nodes.keys()];
+  const n=floydIds.length;
+  const idx=new Map(floydIds.map((id,i)=>[id,i]));
+  const dist=Array.from({length:n},()=>new Array(n).fill(Infinity));
+  for(let i=0;i<n;i++)dist[i][i]=0;
+  graph.edges.forEach((edges,from)=>{
+    edges.forEach(({to,weight})=>{
+      const i=idx.get(from),j=idx.get(to);
+      if(i!==undefined&&j!==undefined)dist[i][j]=Math.min(dist[i][j],weight);
+    });
+  });
+  for(let k=0;k<n;k++)for(let i=0;i<n;i++)for(let j=0;j<n;j++)
+    if(dist[i][k]+dist[k][j]<dist[i][j])dist[i][j]=dist[i][k]+dist[k][j];
+  floydMatrix={dist,idx,n};
+}
+setTimeout(buildFloyd,100);
+
+// ==================== FARE ENGINE (Segment Tree) ====================
+// Zone-to-zone base fares (BDT)
+const zoneFares=[20,30,40,55,70]; // zone 1..5 cumulative increments
+const fareSegTree=new SegmentTree(zoneFares);
+const PEAK_MULTIPLIER=1.3;
+let peakTime=false;
+
+function getFare(fromStation,toStation){
+  if(!fromStation||!toStation)return 0;
+  const z1=fromStation.zone,z2=toStation.zone;
+  const lo=Math.min(z1,z2)-1,hi=Math.max(z1,z2)-1;
+  if(lo===hi)return 20;
+  fareSegTree.log=[];
+  const base=fareSegTree.query(lo,hi);
+  updateDSA('dsa-segtree',`Zone ${z1} → Zone ${z2}\nQuery [${lo},${hi}]\n${fareSegTree.log.join('\n')}\nBase fare: ${base} BDT`);
+  return Math.round(base*(peakTime?PEAK_MULTIPLIER:1));
+}
+
+// ==================== AUTOCOMPLETE ====================
+let acData={};
+function handleAC(inp,key){
+  const q=inp.value.trim();
+  const sug=document.getElementById('sug-'+key);
+  if(!sug)return;
+  if(q.length<1){sug.innerHTML='';return}
+  const results=trie.search(q).slice(0,6);
+  if(key==='from'||key==='to'){
+    updateDSA('dsa-trie',`Query: "${q}"\nTraversal:\n${trie.traversalLog.join('\n')}\nResults: ${results.length} found`);
+  }
+  sug.innerHTML=results.map((r,i)=>{
+    const s=graph.node(r.id);
+    if(!s)return'';
+    const col=LINE_COLORS[s.line]||'#888';
+    return `<div class="suggestion${i===0?' sel':''}" onmousedown="selectStation('${key}','${r.id}','${(s.alias||s.name).replace(/'/g,"\\'")}')">
+      <span class="dot" style="background:${col}"></span>${s.alias||s.name} <span style="color:var(--muted);font-size:11px;margin-left:auto">${s.line} · Zone ${s.zone}</span>
+    </div>`;
+  }).join('');
+  acData[key]=results;
+}
+function handleKey(e,key){
+  if(e.key==='Enter'&&acData[key]&&acData[key][0]){
+    const r=acData[key][0];const s=graph.node(r.id);
+    selectStation(key,r.id,s.alias||s.name);
+  }
+}
+function selectStation(key,id,name){
+  const inp=document.getElementById('inp-'+key)||document.getElementById(key==='fare-from'?'fare-from':key==='fare-to'?'fare-to':key==='time-station'?'time-station':'inp-'+key);
+  const inp2=document.getElementById(key);
+  const target=inp||inp2;
+  if(target)target.value=name;
+  const sug=document.getElementById('sug-'+key);
+  if(sug)sug.innerHTML='';
+  acData['sel-'+key]=id;
+}
+
+// ==================== ROUTE FINDING ====================
+let currentAlgo='dijkstra';
+let currentPref='fastest';
+function setAlgo(a,btn){
+  currentAlgo=a;
+  document.querySelectorAll('.algo-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('stat-algo').textContent='Algo: '+a.toUpperCase();
+}
+function setPref(p){currentPref=p}
+function swap(){
+  const f=document.getElementById('inp-from').value;
+  const t=document.getElementById('inp-to').value;
+  document.getElementById('inp-from').value=t;
+  document.getElementById('inp-to').value=f;
+  const sf=acData['sel-from'],st=acData['sel-to'];
+  acData['sel-from']=st;acData['sel-to']=sf;
+}
+
+function findRoute(){
+  const fromId=acData['sel-from'];
+  const toId=acData['sel-to'];
+  if(!fromId||!toId){
+    // Try to match from text
+    const ft=document.getElementById('inp-from').value;
+    const tt=document.getElementById('inp-to').value;
+    const fr=trie.search(ft);const tr=trie.search(tt);
+    if(fr.length)acData['sel-from']=fr[0].id;
+    if(tr.length)acData['sel-to']=tr[0].id;
+    if(!acData['sel-from']||!acData['sel-to']){
+      document.getElementById('route-result').innerHTML='<div class="alert">Please select stations from the dropdown suggestions.</div>';return;
+    }
+  }
+  const src=acData['sel-from'],dst=acData['sel-to'];
+  if(src===dst){document.getElementById('route-result').innerHTML='<div class="alert">Source and destination are the same.</div>';return}
+
+  let result,heapLog='',bfsLog='',log=[];
+  const t0=performance.now();
+
+  if(currentAlgo==='dijkstra'){
+    result=dijkstra(src,dst);
+    heapLog=result.heap.log.slice(0,15).join('\n');
+    log=result.log;
+    updateDSA('dsa-heap',heapLog||'No heap data');
+  } else if(currentAlgo==='bfs'){
+    result=bfs(src,dst);
+    bfsLog=result.queueLog.slice(0,5).map((q,i)=>`Step ${i+1}: [${q.map(id=>graph.node(id)?.name.split(' ')[0]).join(', ')}]`).join('\n');
+    log=result.log;
+    updateDSA('dsa-bfs',bfsLog);
+  } else {
+    result=astar(src,dst);
+    log=result.log;
+  }
+
+  const elapsed=(performance.now()-t0).toFixed(2);
+  const path=reconstructPath(result.prev,src,dst);
+
+  // Update algo log
+  const logEl=document.getElementById('algo-log');
+  logEl.innerHTML=log.map(e=>`<div class="log-entry ${e.type}">${e.msg}</div>`).join('');
+  logEl.scrollTop=logEl.scrollHeight;
+
+  // Update graph DSA display
+  const sample=graph.neighbors(src).slice(0,3);
+  updateDSA('dsa-graph',`Node: ${graph.node(src)?.name}\nEdges:\n${sample.map(e=>`  → ${graph.node(e.to)?.name} [${e.line} w=${e.weight}]`).join('\n')}\n\nTotal nodes: ${graph.nodes.size}\nTotal edges: ${[...graph.edges.values()].reduce((a,b)=>a+b.length,0)}`);
+
+  if(!path){
+    document.getElementById('route-result').innerHTML='<div class="alert">No route found between these stations.</div>';return;
+  }
+
+  // Compute totals
+  let totalTime=0,stops=path.length-1;
+  for(let i=1;i<path.length;i++){
+    for(const e of graph.neighbors(path[i-1].id)){
+      if(e.to===path[i].id){totalTime+=e.weight;break}
+    }
+  }
+  const fromS=graph.node(src),toS=graph.node(dst);
+  const fare=getFare(fromS,toS);
+  const lines=[...new Set(path.map(p=>p.line).filter(l=>l!=='Transfer'))];
+  const transfers=path.filter(p=>p.line==='Transfer').length;
+
+  const algoBadge={
+    dijkstra:`<span class="badge badge-blue">DIJKSTRA O((V+E)logV)</span>`,
+    bfs:`<span class="badge badge-green">BFS O(V+E)</span>`,
+    astar:`<span class="badge badge-purple">A* O(ElogV)</span>`
+  }[currentAlgo];
+
+  let stopsHTML='';
+  for(let i=0;i<path.length;i++){
+    const s=graph.node(path[i].id);
+    if(!s)continue;
+    const isFirst=i===0,isLast=i===path.length-1;
+    const isTransfer=path[i].line==='Transfer'||(i>0&&path[i].line!==path[i-1].line&&!isFirst);
+    const col=LINE_COLORS[s.line]||'#888';
+    const nextLine=i<path.length-1?path[i+1].line:null;
+    const isLineChange=nextLine&&nextLine!==path[i].line&&nextLine!=='Transfer';
+    stopsHTML+=`<div class="route-stop line-${s.line}">
+      ${i<path.length-1?`<div class="stop-line colored" style="--line-color:${col}"></div>`:''}
+      <div class="stop-dot ${isTransfer?'transfer':''} ${isFirst||isLast?'terminal':''}" style="--line-color:${col}"></div>
+      <div class="stop-info">
+        <div class="stop-name">${s.alias||s.name}</div>
+        <div class="stop-meta">${s.line} Line · Zone ${s.zone}${i>0&&i<path.length-1?` · ~${i*Math.round(totalTime/stops)} min from start`:''}</div>
+        ${isLineChange?`<span class="transfer-tag">⇄ Transfer to ${nextLine} Line</span>`:''}
+      </div>
+    </div>`;
+  }
+
+  document.getElementById('route-result').innerHTML=`
+    <div class="card">
+      <div class="result-header">
+        <div>
+          <div style="font-size:16px;font-weight:600;margin-bottom:6px">${fromS?.alias||fromS?.name} → ${toS?.alias||toS?.name}</div>
+          <div class="algo-badge">${algoBadge}<span class="badge badge-orange">TRIE SEARCH</span><span class="badge badge-green">SEG TREE FARE</span></div>
+        </div>
+        <div style="text-align:right;font-size:11px;color:var(--muted)">Computed in ${elapsed}ms<br>Algo: ${currentAlgo.toUpperCase()}</div>
+      </div>
+      <div class="stats-row">
+        <div class="stat"><div class="stat-val">${totalTime}<span style="font-size:12px">min</span></div><div class="stat-lbl">Total Time</div></div>
+        <div class="stat"><div class="stat-val">${stops}</div><div class="stat-lbl">Stops</div></div>
+        <div class="stat"><div class="stat-val">৳${fare}</div><div class="stat-lbl">Fare (BDT)</div></div>
+        <div class="stat"><div class="stat-val">${transfers}</div><div class="stat-lbl">Transfers</div></div>
+      </div>
+      <div style="margin-bottom:8px;font-family:'Space Mono',monospace;font-size:10px;color:var(--muted)">Lines: ${lines.map(l=>`<span style="color:${LINE_COLORS[l]||'#888'}">${l}</span>`).join(' + ')}</div>
+      <div class="route-path">${stopsHTML}</div>
+    </div>`;
+}
+
+// ==================== NETWORK MAP ====================
+function drawMap(){
+  const canvas=document.getElementById('mapCanvas');
+  if(!canvas)return;
+  canvas.width=canvas.offsetWidth*window.devicePixelRatio||860;
+  canvas.height=380*window.devicePixelRatio||380;
+  const ctx=canvas.getContext('2d');
+  const dpr=window.devicePixelRatio||1;
+  ctx.scale(dpr,dpr);
+  const W=canvas.width/dpr,H=canvas.height/dpr;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#111827';ctx.fillRect(0,0,W,H);
+
+  const scaleX=W/520,scaleY=H/560;
+  const sx=x=>x*scaleX;const sy=y=>y*scaleY;
+
+  // Draw edges
+  const drawn=new Set();
+  graph.edges.forEach((edges,from)=>{
+    const fs=graph.node(from);if(!fs)return;
+    edges.forEach(({to,line})=>{
+      const key=[from,to].sort().join('-');
+      if(drawn.has(key))return;drawn.add(key);
+      const ts=graph.node(to);if(!ts)return;
+      const col=LINE_COLORS[line]||'#334';
+      ctx.beginPath();ctx.moveTo(sx(fs.x),sy(fs.y));ctx.lineTo(sx(ts.x),sy(ts.y));
+      ctx.strokeStyle=col;ctx.lineWidth=line==='Transfer'?1.5:3;
+      ctx.globalAlpha=line==='Transfer'?0.5:0.85;
+      ctx.setLineDash(line==='Transfer'?[4,4]:[]);
+      ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;
+    });
+  });
+
+  // Draw stations
+  STATIONS.forEach(s=>{
+    const col=LINE_COLORS[s.line]||'#888';
+    const isTransfer=s.transfers.length>0;
+    ctx.beginPath();
+    ctx.arc(sx(s.x),sy(s.y),isTransfer?6:4,0,Math.PI*2);
+    ctx.fillStyle=isTransfer?'#fff':col;
+    ctx.fill();
+    if(isTransfer){ctx.strokeStyle=col;ctx.lineWidth=2.5;ctx.stroke()}
+    ctx.fillStyle='rgba(255,255,255,0.75)';
+    ctx.font=`${isTransfer?'600 ':''}9px DM Sans`;
+    ctx.fillText(s.alias||s.name.split(' ')[0],sx(s.x)+8,sy(s.y)+3);
+  });
+
+  // Legend
+  const legEl=document.getElementById('map-legend');
+  legEl.innerHTML=Object.entries(LINE_COLORS).map(([l,c])=>
+    `<div class="legend-item"><div class="legend-dot" style="background:${c}"></div>${l} Line</div>`
+  ).join('');
+
+  // Station info grid
+  const infoEl=document.getElementById('station-info-grid');
+  const byLine={};
+  STATIONS.forEach(s=>{const k=s.alias||s.name;if(!byLine[k]){byLine[k]=s}});
+  infoEl.innerHTML=Object.values(byLine).slice(0,12).map(s=>`
+    <div class="card-sm" style="border-left:3px solid ${LINE_COLORS[s.line]||'#888'}">
+      <div style="font-size:12px;font-weight:600">${s.alias||s.name}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px">${s.line} · Zone ${s.zone}${s.transfers.length?` · Transfer: ${s.transfers.join(', ')}`:''}
+    </div>`
+  ).join('');
+}
+setTimeout(drawMap,200);
+
+// ==================== FARE ====================
+function calcFare(){
+  const fi=acData['sel-fare-from'],ti=acData['sel-fare-to'];
+  const ft=document.getElementById('fare-from').value;
+  const tt=document.getElementById('fare-to').value;
+  let fromId=fi,toId=ti;
+  if(!fromId){const r=trie.search(ft);if(r.length)fromId=r[0].id}
+  if(!toId){const r=trie.search(tt);if(r.length)toId=r[0].id}
+  if(!fromId||!toId){document.getElementById('fare-result').innerHTML='<div class="alert">Select both stations.</div>';return}
+  const fs=graph.node(fromId),ts=graph.node(toId);
+  const base=getFare(fs,ts);
+  const student=Math.round(base*0.5);
+  const senior=Math.round(base*0.7);
+  const monthly=Math.round(base*22*0.8);
+  document.getElementById('fare-result').innerHTML=`
+    <div class="card">
+      <div style="font-size:14px;font-weight:600;margin-bottom:14px">${fs.alias||fs.name} → ${ts.alias||ts.name} · Zone ${fs.zone}→${ts.zone} ${peakTime?'<span class="badge badge-orange">PEAK</span>':''}</div>
+      <div class="fare-grid">
+        <div class="fare-card"><div class="fare-amount">৳${base}</div><div class="fare-type">Standard Fare</div></div>
+        <div class="fare-card"><div class="fare-amount">৳${student}</div><div class="fare-type">Student (50%)</div></div>
+        <div class="fare-card"><div class="fare-amount">৳${senior}</div><div class="fare-type">Senior (70%)</div></div>
+        <div class="fare-card"><div class="fare-amount">৳${monthly}</div><div class="fare-type">Monthly Pass</div></div>
+      </div>
+      <div class="alert-success">Segment Tree query completed · Zones processed: ${Math.abs(fs.zone-ts.zone)+1}</div>
+    </div>`;
+}
+function setTime(t,btn){
+  peakTime=t==='peak';
+  document.querySelectorAll('#tab-fare .algo-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+function buildZoneMatrix(){
+  const el=document.getElementById('zone-matrix');
+  if(!el)return;
+  let html='<table style="width:100%;font-size:11px;font-family:Space Mono,monospace;border-collapse:collapse">';
+  html+='<tr><td style="padding:4px;color:var(--muted)">Zone→</td>';
+  for(let j=1;j<=5;j++)html+=`<td style="padding:4px;color:var(--accent);text-align:center">${j}</td>`;
+  html+='</tr>';
+  for(let i=1;i<=5;i++){
+    html+=`<tr><td style="padding:4px;color:var(--accent)">${i}</td>`;
+    for(let j=1;j<=5;j++){
+      const lo=Math.min(i,j)-1,hi=Math.max(i,j)-1;
+      const fare=i===j?0:fareSegTree.query(lo,hi);
+      html+=`<td style="padding:4px;text-align:center;color:${i===j?'var(--muted)':'var(--green)'}">${i===j?'-':'৳'+fare}</td>`;
+    }
+    html+='</tr>';
+  }
+  html+='</table>';el.innerHTML=html;
+}
+setTimeout(buildZoneMatrix,300);
+
+// ==================== TIMETABLE ====================
+const BASE_START=5*60+30; // 5:30am
+function showTimetable(){
+  const q=document.getElementById('time-station').value;
+  const r=trie.search(q);
+  if(!r.length){document.getElementById('timetable-result').innerHTML='<div class="alert">Station not found.</div>';return}
+  const s=graph.node(r[0].id);
+  let html=`<div style="font-family:Space Mono,monospace;font-size:11px;color:var(--muted);margin-bottom:10px">${(s.alias||s.name).toUpperCase()} · ${s.line} LINE · ZONE ${s.zone}</div>`;
+  const times=[];
+  for(let i=0;i<40;i++){
+    const mins=BASE_START+i*9;
+    const h=Math.floor(mins/60),m=mins%60;
+    if(h>22)break;
+    times.push(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`);
+  }
+  html+=times.map((t,i)=>`
+    <div class="time-row">
+      <div><span class="time-badge">${t}</span> <span style="font-size:13px;color:var(--muted)">Train ${(i%8)+1} · ${s.line} Line</span></div>
+      <div style="font-size:12px;color:var(--muted)">${i<8?'<span style="color:var(--green)">On Time</span>':i===12?'<span style="color:var(--orange)">+3 min</span>':'<span style="color:var(--green)">On Time</span>'}</div>
+    </div>`
+  ).join('');
+  document.getElementById('timetable-result').innerHTML=html;
+}
+
+// ==================== DSA TAB ====================
+function updateDSA(id,txt){const el=document.getElementById(id);if(el)el.textContent=txt}
+setTimeout(()=>{
+  if(floydMatrix){
+    const sample=floydIds.slice(0,4).map((a,i)=>
+      `${graph.node(a)?.name?.slice(0,10)||a}: [${floydIds.slice(0,4).map(b=>floydMatrix.dist[floydMatrix.idx.get(a)][floydMatrix.idx.get(b)]===Infinity?'∞':floydMatrix.dist[floydMatrix.idx.get(a)][floydMatrix.idx.get(b)]).join(',')}]`
+    ).join('\n');
+    updateDSA('dsa-floyd',`All-pairs cache built!\nn=${floydMatrix.n} stations\nSample rows:\n${sample}`);
+  }
+  const complexities=[
+    {algo:'Dijkstra',time:'O((V+E)logV)',space:'O(V)',use:'Min-time route'},
+    {algo:'A*',time:'O(ElogV)',space:'O(V)',use:'Heuristic route'},
+    {algo:'BFS',time:'O(V+E)',space:'O(V)',use:'Fewest stops'},
+    {algo:'Floyd',time:'O(V³)',space:'O(V²)',use:'Offline cache'},
+    {algo:'Trie',time:'O(L)',space:'O(ALPHABET×L)',use:'Autocomplete'},
+    {algo:'Seg Tree',time:'O(logN)',space:'O(N)',use:'Fare query'},
+  ];
+  document.getElementById('complexity-ref').innerHTML=complexities.map(c=>`
+    <div class="dsa-card">
+      <div class="dsa-title">${c.algo}</div>
+      <div style="font-size:11px;color:var(--green);font-family:Space Mono,monospace">${c.time}</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:2px">${c.space} · ${c.use}</div>
+    </div>`).join('');
+},500);
+
+// ==================== TABS ====================
+function showTab(t){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(s=>s.classList.remove('active'));
+  document.getElementById('tab-'+t).classList.add('active');
+  const tabs=document.querySelectorAll('.tab');
+  const idx={route:0,map:1,fare:2,dsa:3,time:4}[t];
+  if(tabs[idx])tabs[idx].classList.add('active');
+  if(t==='map')setTimeout(drawMap,50);
+}
+
+// Status clock
+setInterval(()=>{
+  const n=new Date();
+  document.getElementById('stat-time').textContent=`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`;
+},1000);
+document.getElementById('stat-stations').textContent=`Stations: ${STATIONS.length}`;
+document.getElementById('stat-time').textContent=new Date().toTimeString().slice(0,5);
+</script>
+</body>
+</html>
